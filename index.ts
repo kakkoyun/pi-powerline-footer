@@ -1968,15 +1968,15 @@ export default function powerlineFooter(pi: ExtensionAPI) {
       invalidateGitStatus();
       requestStatusRender();
     }
-    // Check for bash commands that might change git branch
+    // Any bash command can change the working tree; only some change the branch.
     if (event.toolName === "bash" && event.input?.command) {
       const cmd = String(event.input.command);
+      // The command has completed, so start refreshing immediately.
+      invalidateGitStatus();
       if (mightChangeGitBranch(cmd)) {
-        // The command has completed, so start refreshing immediately.
-        invalidateGitStatus();
         invalidateGitBranch();
-        requestStatusRender();
       }
+      requestStatusRender();
     }
   });
 
@@ -2935,7 +2935,7 @@ export default function powerlineFooter(pi: ExtensionAPI) {
       : null;
     // Full mode retains counts for dirty branch coloring, even with hidden indicators.
     const gitStatus = showGit
-      ? getGitStatus(gitBranch, gitOptions?.polling, ctx.cwd)
+      ? getGitStatus(gitBranch, gitOptions?.polling, ctx.cwd, gitOptions?.statusTtlMs)
       : { branch: null, staged: 0, unstaged: 0, untracked: 0 };
     const extensionStatuses = footerDataRef?.getExtensionStatuses() ?? new Map();
     const customItemsById = new Map(config.customItems.map((item) => [item.id, item]));

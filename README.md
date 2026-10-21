@@ -530,6 +530,16 @@ By default the git segment polls both branch and dirty state. If background `git
 
 Use `"off"` to disable extension-owned git polling entirely and only show the branch reported by Pi when available.
 
+Set `git.statusTtlMs` to refresh the dirty counts less often. The default is `1000` (milliseconds). Edits, writes, and bash commands made by the agent still refresh the counts right away; changes made outside Pi show up after at most the interval. This helps in large repositories, where each `git status` call is slow.
+
+```json
+{
+  "powerline": {
+    "git": { "statusTtlMs": 10000 }
+  }
+}
+```
+
 ## Git host icon
 
 Set `git.hostIcon` to replace the branch icon with the origin remote's host logo:

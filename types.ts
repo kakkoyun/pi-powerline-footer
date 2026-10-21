@@ -100,6 +100,9 @@ export interface StatusLineSegmentOptions {
     /** Replace the branch icon with the origin remote's host logo
      * (GitHub/GitLab/Bitbucket, or a generic git logo). Default false. */
     hostIcon?: boolean;
+    /** Minimum age of the cached dirty counts before a background refresh
+     * runs, in milliseconds. Default 1000. */
+    statusTtlMs?: number;
   };
   time?: { format?: "12h" | "24h"; showSeconds?: boolean };
   cost?: { subscriptionDisplay?: "subscription" | "reported-cost" | "both"; currency?: CostCurrencyCode };

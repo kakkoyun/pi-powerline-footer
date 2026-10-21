@@ -191,6 +191,54 @@ test("attached, detached and worktree branch displays follow repository transiti
   assert.deepEqual(getGitStatus("main", "off", cwd), { branch: "main", staged: 0, unstaged: 0, untracked: 0 });
 });
 
+test("status refresh honors the configured TTL", async (t) => {
+  const { repo } = fixture(t);
+  const cwd = repo("main", "github.com");
+  let now = 1_000;
+  t.mock.method(Date, "now", () => now);
+
+  writeFileSync(join(cwd, "dirty"), "dirty");
+  getGitStatus("main", "full", cwd, 10_000);
+  await waitForGitUpdates();
+  assert.deepEqual(getGitStatus("main", "full", cwd, 10_000), { branch: "main", staged: 0, unstaged: 0, untracked: 1 });
+
+  // Inside the configured TTL, no background refresh picks up the new file.
+  writeFileSync(join(cwd, "another"), "dirty");
+  now += 5_000;
+  getGitStatus("main", "full", cwd, 10_000);
+  await waitForGitUpdates();
+  assert.deepEqual(getGitStatus("main", "full", cwd, 10_000), { branch: "main", staged: 0, unstaged: 0, untracked: 1 });
+
+  // Once the TTL elapsed, the next render refreshes in the background.
+  now += 5_000;
+  getGitStatus("main", "full", cwd, 10_000);
+  await waitForGitUpdates();
+  assert.deepEqual(getGitStatus("main", "full", cwd, 10_000), { branch: "main", staged: 0, unstaged: 0, untracked: 2 });
+});
+
+test("status refresh defaults to a one-second TTL", async (t) => {
+  const { repo } = fixture(t);
+  const cwd = repo("main", "github.com");
+  let now = 1_000;
+  t.mock.method(Date, "now", () => now);
+
+  writeFileSync(join(cwd, "dirty"), "dirty");
+  getGitStatus("main", "full", cwd);
+  await waitForGitUpdates();
+  assert.deepEqual(getGitStatus("main", "full", cwd), { branch: "main", staged: 0, unstaged: 0, untracked: 1 });
+
+  writeFileSync(join(cwd, "another"), "dirty");
+  now += 999;
+  getGitStatus("main", "full", cwd);
+  await waitForGitUpdates();
+  assert.deepEqual(getGitStatus("main", "full", cwd), { branch: "main", staged: 0, unstaged: 0, untracked: 1 });
+
+  now += 1;
+  getGitStatus("main", "full", cwd);
+  await waitForGitUpdates();
+  assert.deepEqual(getGitStatus("main", "full", cwd), { branch: "main", staged: 0, unstaged: 0, untracked: 2 });
+});
+
 test("detectGitHost recognizes known hosts over SSH and HTTPS", () => {
   assert.equal(detectGitHost("git@github.com:owner/repo.git"), "github");
   assert.equal(detectGitHost("https://github.com/owner/repo.git"), "github");

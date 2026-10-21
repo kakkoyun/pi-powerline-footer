@@ -193,6 +193,15 @@ test("parsePowerlineConfig validates outer padding without coercion", () => {
   }
 });
 
+test("parsePowerlineConfig validates git status refresh TTL without coercion", () => {
+  for (const ttl of [0, 1, 10_000]) {
+    assert.equal(parsePowerlineConfig({ git: { statusTtlMs: ttl } }, ["default"]).segmentOptions.git?.statusTtlMs, ttl);
+  }
+  for (const invalid of [undefined, null, -1, NaN, Infinity, -Infinity, "1000", true, [], {}]) {
+    assert.deepEqual(parsePowerlineConfig({ git: { statusTtlMs: invalid } }, ["default"]).segmentOptions, { git: {} });
+  }
+});
+
 test("parsePowerlineConfig validates secondary overflow mode", () => {
   const unset = parsePowerlineConfig({}, ["default"]);
   const wrap = parsePowerlineConfig({ secondaryOverflow: " Wrap " }, ["default"]);

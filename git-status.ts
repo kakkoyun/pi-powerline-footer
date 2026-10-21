@@ -300,7 +300,7 @@ export function getCurrentBranch(providerBranch: string | null, cwd = process.cw
  * This is designed for synchronous render() calls - returns last known value
  * while refreshing in background.
  */
-export function getGitStatus(providerBranch: string | null, pollingMode: GitPollingMode = "full", cwd = process.cwd()): GitStatus {
+export function getGitStatus(providerBranch: string | null, pollingMode: GitPollingMode = "full", cwd = process.cwd(), statusTtlMs = CACHE_TTL_MS): GitStatus {
   cwd = useCwd(cwd);
   const now = Date.now();
   const branch = pollingMode === "off" ? providerBranch : getCurrentBranch(providerBranch, cwd);
@@ -310,7 +310,7 @@ export function getGitStatus(providerBranch: string | null, pollingMode: GitPoll
   }
 
   // Refresh expired data in the background, serving the last known counts.
-  if (!pendingFetch && (!cachedStatus || now - cachedStatus.timestamp >= CACHE_TTL_MS)) {
+  if (!pendingFetch && (!cachedStatus || now - cachedStatus.timestamp >= statusTtlMs)) {
     const fetchId = invalidationCounter; // Capture current counter
     pendingFetch = fetchGitStatus(cwd).then((result) => {
       // Cache result if no invalidation happened (including null for non-git dirs)
