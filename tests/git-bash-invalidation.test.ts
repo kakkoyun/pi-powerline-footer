@@ -46,20 +46,18 @@ test("bash tool results invalidate the git status cache", async (t) => {
   const git = (...args: string[]) => execFileSync("git", args, { cwd, encoding: "utf8" });
   git("init", "-q", "-b", "main");
 
-  // Epoch-scale base so cache invalidation (timestamp reset to 0) is always
-  // older than the configured TTL, as with the real clock.
-  let now = 1_000_000_000_000;
-  t.mock.method(Date, "now", () => now);
+  // A TTL larger than Date.now() must not stop invalidation from refreshing.
+  const ttl = Number.MAX_SAFE_INTEGER;
   writeFileSync(join(cwd, "dirty"), "first");
-  getGitStatus("main", "full", cwd, 60_000);
+  getGitStatus("main", "full", cwd, ttl);
   await waitForGitUpdates();
-  assert.equal(getGitStatus("main", "full", cwd, 60_000).untracked, 1);
+  assert.equal(getGitStatus("main", "full", cwd, ttl).untracked, 1);
 
   // A long TTL alone would keep serving stale counts; the completed bash
   // command that touched the working tree must refresh them right away.
   writeFileSync(join(cwd, "generated"), "second");
   await emit("tool_result", { toolName: "bash", input: { command: "echo generated > generated" } });
-  getGitStatus("main", "full", cwd, 60_000);
+  getGitStatus("main", "full", cwd, ttl);
   await waitForGitUpdates();
-  assert.equal(getGitStatus("main", "full", cwd, 60_000).untracked, 2);
+  assert.equal(getGitStatus("main", "full", cwd, ttl).untracked, 2);
 });

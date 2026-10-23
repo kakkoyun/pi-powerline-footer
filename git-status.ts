@@ -349,7 +349,8 @@ export function getGitStatus(providerBranch: string | null, pollingMode: GitPoll
  * refresh runs, instead of blanking the segment to zeros (footer flicker).
  */
 export function invalidateGitStatus(): void {
-  if (cachedStatus) cachedStatus.timestamp = 0; // expire, but keep serving the stale value
+  // Expire for any TTL, even one larger than Date.now(), but keep serving the stale value.
+  if (cachedStatus) cachedStatus.timestamp = Number.NEGATIVE_INFINITY;
   invalidationCounter++; // Increment to invalidate any pending fetches
   pendingFetch = null;
 }
